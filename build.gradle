@@ -1,0 +1,36 @@
+import groovy.json.JsonSlurper
+
+apply plugin: 'java'
+
+sourceCompatibility = 16
+
+sourceSets.main {
+    java.srcDirs = ['src']
+    resources.srcDirs = ['assets']
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://www.jitpack.io' }
+}
+
+ext {
+    def json = new JsonSlurper()
+    def pluginFile = file("${sourceSets.main.resources.srcDirs.last()}/plugin.json")
+    def plugin = json.parseText(pluginFile.text)
+
+    artifactBaseName = plugin.name + (!plugin.version.isEmpty() ? "-$plugin.version" : '')
+    gameVersion = 'v' +  plugin.minGameVersion
+}
+
+dependencies {
+    compileOnly "com.github.Anuken.Arc:arc-core:$gameVersion"
+    compileOnly "com.github.Anuken.Mindustry:core:$gameVersion"
+}
+
+jar {
+    archiveBaseName.set artifactBaseName
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it) }
+    }
+}
